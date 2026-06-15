@@ -113,7 +113,7 @@ App (CLI + Web / composition root)
 | Pacote | Responsabilidade |
 |--------|------------------|
 | `model` | `Loja` (enum), `Oferta` (record imutável, preço em BRL), `Jogo` (agrupa ofertas) |
-| `normalizacao` | `NormalizadorTitulo` (forma canônica do título), `SimilaridadeTitulo` (Levenshtein) |
+| `normalizacao` | `NormalizadorTitulo` (forma canônica), `SimilaridadeTitulo` (Levenshtein), `RelevanciaTitulo` (precisão da busca) |
 | `http` | `Buscador` (interface), `JsoupBuscador` (rede), `CacheBuscador` (decorator de cache) |
 | `cambio` | `ConversorMoeda` (interface), `TaxaFixaConversor` (fallback), `CotacaoAoVivoConversor` (cotação ao vivo) |
 | `fonte` | `FonteLoja` (interface), `FonteSteam`, `FonteGamersGate`, `FonteGamesPlanet` |
@@ -168,6 +168,22 @@ O `ComparadorPrecos` agrupa as ofertas por essa chave. Em seguida, um passo opci
 ficaram quase iguais (ex.: "The Witcher 3" × "Witcher 3"), acima do limiar `Config.LIMIAR_SIMILARIDADE`.
 Há uma **guarda de sequência**: títulos com números diferentes nunca se fundem ("Portal" ≠ "Portal 2",
 "FIFA 22" ≠ "FIFA 23"). O match aproximado é ligado por padrão na CLI/UI e desligável com `--exato`.
+
+### Precisão dos resultados (`RelevanciaTitulo`)
+
+As buscas das lojas são **abrangentes** — pesquisar "elden ring" devolve, junto do jogo, uma
+penca de títulos tangenciais que a própria loja sugeriu. Antes de devolver, o `ComparadorPrecos`
+filtra por relevância:
+
+- **Todos os termos significativos presentes**: o título do jogo precisa conter cada token do
+  termo (palavras vazias como "the"/"of" não são exigidas). "elden ring" mantém *Elden Ring* e
+  seus DLCs; descarta *Goose Evolution*, *Ring of Pain*.
+- **Sem conteúdo extra**: itens que claramente não são o jogo (trilha sonora, artbook, wallpaper)
+  saem fora — é um comparador de **jogos**.
+- **Rede de segurança**: se o filtro zerar tudo (ex.: busca por sigla), devolve o resultado amplo
+  em vez de uma tela vazia.
+
+Efeito típico: "elden ring" cai de ~37 para ~5 jogos; "the witcher 3" para os 4 da família.
 
 ---
 
