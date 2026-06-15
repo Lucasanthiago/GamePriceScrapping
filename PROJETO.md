@@ -113,7 +113,7 @@ App (CLI + Web / composition root)
 | Pacote | Responsabilidade |
 |--------|------------------|
 | `model` | `Loja` (enum), `Oferta` (record imutável, preço em BRL), `Jogo` (agrupa ofertas) |
-| `normalizacao` | `NormalizadorTitulo` (forma canônica do título), `SimilaridadeTitulo` (Levenshtein) |
+| `normalizacao` | `NormalizadorTitulo` (forma canônica), `SimilaridadeTitulo` (Levenshtein), `RelevanciaTitulo` (precisão da busca) |
 | `http` | `Buscador` (interface), `JsoupBuscador` (rede), `CacheBuscador` (decorator de cache) |
 | `cambio` | `ConversorMoeda` (interface), `TaxaFixaConversor` (fallback), `CotacaoAoVivoConversor` (cotação ao vivo) |
 | `fonte` | `FonteLoja` (interface), `FonteSteam`, `FonteGamersGate`, `FonteGamesPlanet` |
@@ -124,8 +124,33 @@ App (CLI + Web / composition root)
 | `config` | `Config` (constantes: userAgent, timeout, pausa, cache, taxa, pesos, porta) |
 | `util` | `Precos` (parsing/format de moeda), `Log` (log simples no stderr) |
 
-A UI web é estática em `src/main/resources/web/` (`index.html`, `styles.css`, `app.js`),
-embutida no jar e servida pelo `ServidorWeb` a partir do classpath.
+### Front-end (UI web)
+
+Os assets ficam em `src/main/resources/web/`, embutidos no jar e servidos pelo `ServidorWeb`
+a partir do classpath. **Sem framework e sem build**: usa módulos ES nativos do navegador,
+fiel à regra de manter o Jsoup como única dependência. O front é componentizado para escalar —
+separa **dados → lógica → visual**:
+
+```
+web/
+├─ index.html              # marca os contêineres; carrega os CSS e o módulo /js/app.js
+├─ css/                    # um arquivo por componente (ordem: base → … → responsive)
+│  ├─ base.css             # tokens de design (:root), reset, padrões globais
+│  ├─ layout.css  search.css  toolbar.css  highlight.css  game-card.css  states.css
+│  └─ responsive.css
+└─ js/
+   ├─ app.js               # controlador: dono do estado, liga eventos, orquestra
+   ├─ api.js               # único ponto que fala com /api (fetch)
+   ├─ logic.js             # transformações puras (filtrar/ordenar/melhorVale), sem DOM
+   ├─ dom.js               # helpers: h() (mini-hyperscript seguro), sanitizarUrl, fromHTML
+   ├─ config.js  format.js # lojas (cor/sigla), ícones SVG, formatação
+   └─ components/          # cada peça do visual = uma função que devolve nós do DOM
+      ├─ gameCard.js  offerRow.js  highlightCard.js  cambioBadge.js  states.js
+```
+
+Adicionar uma peça nova = um arquivo em `js/components/` + (se precisar) um CSS em `css/`.
+Os componentes recebem dados e devolvem DOM via `h(...)`, que escapa texto por padrão (sem `innerHTML`
+com dados das lojas) — XSS fica contido.
 
 ---
 
@@ -143,6 +168,22 @@ O `ComparadorPrecos` agrupa as ofertas por essa chave. Em seguida, um passo opci
 ficaram quase iguais (ex.: "The Witcher 3" × "Witcher 3"), acima do limiar `Config.LIMIAR_SIMILARIDADE`.
 Há uma **guarda de sequência**: títulos com números diferentes nunca se fundem ("Portal" ≠ "Portal 2",
 "FIFA 22" ≠ "FIFA 23"). O match aproximado é ligado por padrão na CLI/UI e desligável com `--exato`.
+
+### Precisão dos resultados (`RelevanciaTitulo`)
+
+As buscas das lojas são **abrangentes** — pesquisar "elden ring" devolve, junto do jogo, uma
+penca de títulos tangenciais que a própria loja sugeriu. Antes de devolver, o `ComparadorPrecos`
+filtra por relevância:
+
+- **Todos os termos significativos presentes**: o título do jogo precisa conter cada token do
+  termo (palavras vazias como "the"/"of" não são exigidas). "elden ring" mantém *Elden Ring* e
+  seus DLCs; descarta *Goose Evolution*, *Ring of Pain*.
+- **Sem conteúdo extra**: itens que claramente não são o jogo (trilha sonora, artbook, wallpaper)
+  saem fora — é um comparador de **jogos**.
+- **Rede de segurança**: se o filtro zerar tudo (ex.: busca por sigla), devolve o resultado amplo
+  em vez de uma tela vazia.
+
+Efeito típico: "elden ring" cai de ~37 para ~5 jogos; "the witcher 3" para os 4 da família.
 
 ---
 
