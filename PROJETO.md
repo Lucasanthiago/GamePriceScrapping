@@ -124,8 +124,33 @@ App (CLI + Web / composition root)
 | `config` | `Config` (constantes: userAgent, timeout, pausa, cache, taxa, pesos, porta) |
 | `util` | `Precos` (parsing/format de moeda), `Log` (log simples no stderr) |
 
-A UI web é estática em `src/main/resources/web/` (`index.html`, `styles.css`, `app.js`),
-embutida no jar e servida pelo `ServidorWeb` a partir do classpath.
+### Front-end (UI web)
+
+Os assets ficam em `src/main/resources/web/`, embutidos no jar e servidos pelo `ServidorWeb`
+a partir do classpath. **Sem framework e sem build**: usa módulos ES nativos do navegador,
+fiel à regra de manter o Jsoup como única dependência. O front é componentizado para escalar —
+separa **dados → lógica → visual**:
+
+```
+web/
+├─ index.html              # marca os contêineres; carrega os CSS e o módulo /js/app.js
+├─ css/                    # um arquivo por componente (ordem: base → … → responsive)
+│  ├─ base.css             # tokens de design (:root), reset, padrões globais
+│  ├─ layout.css  search.css  toolbar.css  highlight.css  game-card.css  states.css
+│  └─ responsive.css
+└─ js/
+   ├─ app.js               # controlador: dono do estado, liga eventos, orquestra
+   ├─ api.js               # único ponto que fala com /api (fetch)
+   ├─ logic.js             # transformações puras (filtrar/ordenar/melhorVale), sem DOM
+   ├─ dom.js               # helpers: h() (mini-hyperscript seguro), sanitizarUrl, fromHTML
+   ├─ config.js  format.js # lojas (cor/sigla), ícones SVG, formatação
+   └─ components/          # cada peça do visual = uma função que devolve nós do DOM
+      ├─ gameCard.js  offerRow.js  highlightCard.js  cambioBadge.js  states.js
+```
+
+Adicionar uma peça nova = um arquivo em `js/components/` + (se precisar) um CSS em `css/`.
+Os componentes recebem dados e devolvem DOM via `h(...)`, que escapa texto por padrão (sem `innerHTML`
+com dados das lojas) — XSS fica contido.
 
 ---
 

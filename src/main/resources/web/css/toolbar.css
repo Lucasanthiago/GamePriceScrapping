@@ -1,0 +1,45 @@
+/* toolbar — barra de resumo + controles (filtro, ordenação, exportar). */
+
+.painel { margin-top: 22px; }
+
+.resumo {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px 18px; flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.resumo-texto { margin: 0; font-size: 14px; color: var(--text-2); }
+.resumo-texto strong { color: var(--text); font-weight: 650; }
+
+.controles { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+.toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-2); cursor: pointer; user-select: none; }
+.toggle input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+.ordenar { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--text-2); }
+.ordenar select {
+  font: inherit; font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 28px 6px 10px; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%238a909a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+.ordenar select:hover { border-color: var(--text-3); }
+
+.exportar { display: inline-flex; align-items: center; gap: 7px; }
+.exportar-rotulo { font-size: 13px; color: var(--text-2); }
+.botao-exportar {
+  font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  color: var(--text-2); text-decoration: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.botao-exportar:hover { color: var(--accent-strong); border-color: var(--accent-line); background: var(--accent-weak); }

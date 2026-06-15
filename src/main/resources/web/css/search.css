@@ -1,0 +1,68 @@
+/* search — campo de busca, botão e chips de sugestão. */
+
+.busca { margin: 10px 0 6px; }
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px 6px 6px 14px;
+  box-shadow: var(--shadow);
+  transition: border-color .15s, box-shadow .15s;
+}
+.campo:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+.lupa { width: 19px; height: 19px; color: var(--text-3); flex: none; }
+
+#termo {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;          /* >=16px evita zoom automático no iOS */
+  color: var(--text);
+  padding: 8px 0;
+  min-width: 0;
+}
+#termo::placeholder { color: var(--text-3); }
+#termo::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+#btnBuscar {
+  flex: none;
+  border: none;
+  background: var(--text);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background .15s;
+}
+#btnBuscar:hover { background: #000; }
+#btnBuscar:disabled { opacity: .55; cursor: default; }
+
+.sugestoes {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  margin-top: 11px;
+}
+.sugestoes-rotulo { font-size: 12.5px; color: var(--text-3); margin-right: 2px; }
+.chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.chip:hover { border-color: var(--border-strong); color: var(--text); background: var(--surface-2); }

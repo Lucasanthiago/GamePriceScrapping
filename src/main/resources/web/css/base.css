@@ -1,0 +1,63 @@
+/* base — tokens de design, reset e padrões globais.
+   Tema claro, sóbrio. Hierarquia por tipografia e espaço; um único acento
+   (verde = economia). Números tabulares para alinhar os preços.
+   Carregado primeiro: as variáveis (:root) alimentam todos os outros arquivos. */
+
+:root {
+  --w: 880px;
+
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #fafbfb;
+
+  --border: #e6e8eb;
+  --border-strong: #d6dadf;
+
+  --text: #16181d;
+  --text-2: #59616c;
+  --text-3: #8a909a;
+
+  --accent: #12895a;          /* economia / menor preço */
+  --accent-strong: #0e6f49;
+  --accent-weak: #eaf5ef;
+  --accent-line: #bfe3d1;
+
+  --warn: #b4540a;            /* desconto, em pílula */
+  --danger: #b42318;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
+
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+/* o atributo hidden deve sempre vencer os display: flex dos componentes (.cambio, .destaque…) */
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.num { font-variant-numeric: tabular-nums; }
+
+a { color: inherit; }
+
+::selection { background: var(--accent-weak); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
