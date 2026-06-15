@@ -1,0 +1,16 @@
+# Build
+target/
+
+# Cache local de scraping (gerado em tempo de execucao)
+*.html
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
