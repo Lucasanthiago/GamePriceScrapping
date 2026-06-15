@@ -1,8 +1,11 @@
 # Build
 target/
 
-# Cache local de scraping (gerado em tempo de execucao)
-*.html
+# Exports/cache gerados em tempo de execucao na raiz do projeto
+# (o cache de scraping fica no diretorio temporario do SO; as fontes HTML da UI
+#  ficam em src/main/resources/web e NAO devem ser ignoradas)
+/*.html
+/comparacao-*.csv
 
 # IDE
 .idea/
