@@ -8,7 +8,8 @@ package com.gamesprice.model;
  */
 public enum Loja {
     STEAM("Steam"),
-    GAMERSGATE("GamersGate");
+    GAMERSGATE("GamersGate"),
+    GAMESPLANET("GamesPlanet");
 
     private final String rotulo;
 

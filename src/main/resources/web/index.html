@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comparador de Preços de Jogos</title>
+  <meta name="description" content="Compare preços de jogos entre lojas e descubra onde cada título está mais barato.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header class="topo">
+    <div class="marca">
+      <span class="logo">🎮</span>
+      <div>
+        <h1>Comparador de Preços de <span class="ar">Jogos</span></h1>
+        <p class="tagline">Onde cada jogo está <strong>mais barato</strong> — raspado ao vivo de várias lojas.</p>
+      </div>
+    </div>
+    <div class="cambio" id="cambio" hidden>
+      <span class="cambio-rotulo">USD/BRL ao vivo</span>
+      <span class="cambio-valor" id="cambioValor">—</span>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    <form class="busca" id="formBusca" autocomplete="off">
+      <div class="campo">
+        <svg class="lupa" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.3-4.3M11 19a8 8 0 110-16 8 8 0 010 16z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="termo" name="termo" placeholder="Buscar um jogo… (ex.: elden ring)" aria-label="Nome do jogo" required>
+        <button type="submit" id="btnBuscar">Comparar</button>
+      </div>
+      <div class="sugestoes" id="sugestoes">
+        <span class="sugestoes-rotulo">Tente:</span>
+        <button type="button" class="chip" data-termo="elden ring">Elden Ring</button>
+        <button type="button" class="chip" data-termo="witcher">The Witcher</button>
+        <button type="button" class="chip" data-termo="cyberpunk">Cyberpunk 2077</button>
+        <button type="button" class="chip" data-termo="hollow knight">Hollow Knight</button>
+        <button type="button" class="chip" data-termo="portal 2">Portal 2</button>
+      </div>
+    </form>
+
+    <section class="painel" id="painel" hidden>
+      <div class="resumo">
+        <p id="resumoTexto" class="resumo-texto"></p>
+        <div class="controles">
+          <label class="toggle">
+            <input type="checkbox" id="soComparaveis">
+            <span>Só comparáveis</span>
+          </label>
+          <div class="ordenar">
+            <label for="ordem">Ordenar:</label>
+            <select id="ordem">
+              <option value="barato">Mais barato</option>
+              <option value="vale">Vale a pena</option>
+              <option value="desconto">Maior desconto</option>
+            </select>
+          </div>
+          <div class="exportar" title="Exporta todos os resultados da busca (não aplica o filtro/ordenação da tela)">
+            <a class="botao-exportar" id="exportCsv" href="#" download>CSV</a>
+            <a class="botao-exportar" id="exportHtml" href="#" target="_blank" rel="noopener">HTML</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="destaque" id="destaque" hidden></div>
+      <div class="grade" id="grade"></div>
+    </section>
+
+    <section class="estado" id="estado" hidden></section>
+  </main>
+
+  <footer class="rodape">
+    <span>Web scraping com Java 17 + Jsoup · HTML + seletores CSS</span>
+    <span class="rodape-dica">A loja marcada com <strong class="seta">»</strong> é a mais barata de cada jogo.</span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
