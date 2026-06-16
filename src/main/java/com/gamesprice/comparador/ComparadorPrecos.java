@@ -9,7 +9,6 @@ import com.gamesprice.normalizacao.SimilaridadeTitulo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +49,7 @@ public final class ComparadorPrecos {
      */
     public List<Jogo> comparar(String termo) {
         List<Oferta> todas = coletarOfertas(termo);
-        Map<String, Jogo> porTitulo = agruparPorTituloNormalizado(todas);
+        Map<String, Jogo> porTitulo = AgrupadorOfertas.agrupar(todas);
         Collection<Jogo> jogos = limiarSimilaridade > 0
                 ? fundirAproximados(porTitulo)
                 : porTitulo.values();
@@ -85,20 +84,6 @@ public final class ComparadorPrecos {
             todas.addAll(fonte.buscar(termo));
         }
         return todas;
-    }
-
-    private Map<String, Jogo> agruparPorTituloNormalizado(List<Oferta> ofertas) {
-        // LinkedHashMap preserva a ordem de descoberta antes da ordenacao final.
-        Map<String, Jogo> mapa = new LinkedHashMap<>();
-        for (Oferta oferta : ofertas) {
-            String chave = NormalizadorTitulo.normalizar(oferta.tituloOriginal());
-            if (chave.isEmpty()) {
-                continue;
-            }
-            Jogo jogo = mapa.computeIfAbsent(chave, k -> new Jogo(k, oferta.tituloOriginal()));
-            jogo.adicionarOferta(oferta);
-        }
-        return mapa;
     }
 
     /**

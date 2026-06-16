@@ -27,6 +27,10 @@ public final class FonteGamersGate implements FonteLoja {
 
     private static final String BASE = "https://www.gamersgate.com";
     private static final String URL_BUSCA = BASE + "/games/?query=";
+
+    /** Mesma listagem de jogos, filtrada para itens em promocao. */
+    private static final String URL_DESTAQUES = BASE + "/games/?on_sale=1";
+
     private static final Map<String, String> SEM_COOKIES = Map.of();
 
     private final Buscador buscador;
@@ -44,9 +48,18 @@ public final class FonteGamersGate implements FonteLoja {
 
     @Override
     public List<Oferta> buscar(String termo) {
+        String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+        return buscarUrl(url, "para \"" + termo + "\"");
+    }
+
+    @Override
+    public List<Oferta> buscarDestaques() {
+        return buscarUrl(URL_DESTAQUES, "em destaque");
+    }
+
+    private List<Oferta> buscarUrl(String url, String descricaoLog) {
         List<Oferta> ofertas = new ArrayList<>();
         try {
-            String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
             Document doc = buscador.obter(url, SEM_COOKIES);
 
             for (Element item : doc.select("div.catalog-item.product--item")) {
@@ -55,9 +68,9 @@ public final class FonteGamersGate implements FonteLoja {
                     ofertas.add(oferta);
                 }
             }
-            Log.info("GamersGate: " + ofertas.size() + " ofertas para \"" + termo + "\"");
+            Log.info("GamersGate: " + ofertas.size() + " ofertas " + descricaoLog);
         } catch (Exception e) {
-            Log.erro("GamersGate falhou ao buscar \"" + termo + "\"", e);
+            Log.erro("GamersGate falhou ao buscar " + descricaoLog, e);
         }
         return ofertas;
     }

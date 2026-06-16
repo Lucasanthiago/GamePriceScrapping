@@ -52,4 +52,9 @@ public final class Jogo {
     public boolean comparavel() {
         return quantidadeLojas() > 1;
     }
+
+    /** Maior desconto entre as ofertas deste jogo (0 se nenhuma tiver desconto). */
+    public int maiorDesconto() {
+        return ofertas.stream().mapToInt(Oferta::descontoPerc).max().orElse(0);
+    }
 }

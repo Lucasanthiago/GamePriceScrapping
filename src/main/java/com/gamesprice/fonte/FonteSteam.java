@@ -31,6 +31,10 @@ public final class FonteSteam implements FonteLoja {
 
     private static final String URL_BUSCA = "https://store.steampowered.com/search/?term=";
 
+    /** Mesma busca da Steam, filtrada para itens em promocao e ordenada por maior desconto. */
+    private static final String URL_DESTAQUES =
+            "https://store.steampowered.com/search/?specials=1&sort_by=Discount_DESC";
+
     /** birthtime no passado = "maior de idade", pula a tela de verificacao. */
     private static final Map<String, String> COOKIES = Map.of(
             "birthtime", "189302401",
@@ -54,9 +58,18 @@ public final class FonteSteam implements FonteLoja {
 
     @Override
     public List<Oferta> buscar(String termo) {
+        String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+        return buscarUrl(url, "para \"" + termo + "\"");
+    }
+
+    @Override
+    public List<Oferta> buscarDestaques() {
+        return buscarUrl(URL_DESTAQUES, "em destaque");
+    }
+
+    private List<Oferta> buscarUrl(String url, String descricaoLog) {
         List<Oferta> ofertas = new ArrayList<>();
         try {
-            String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
             Document doc = buscador.obter(url, COOKIES);
 
             for (Element linha : doc.select("a.search_result_row")) {
@@ -65,9 +78,9 @@ public final class FonteSteam implements FonteLoja {
                     ofertas.add(oferta);
                 }
             }
-            Log.info("Steam: " + ofertas.size() + " ofertas para \"" + termo + "\"");
+            Log.info("Steam: " + ofertas.size() + " ofertas " + descricaoLog);
         } catch (Exception e) {
-            Log.erro("Steam falhou ao buscar \"" + termo + "\"", e);
+            Log.erro("Steam falhou ao buscar " + descricaoLog, e);
         }
         return ofertas;
     }

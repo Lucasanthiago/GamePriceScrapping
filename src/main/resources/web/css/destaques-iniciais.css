@@ -1,0 +1,25 @@
+/* destaques-iniciais — seção da home com os maiores descontos do momento.
+   Aparece antes de qualquer busca e some assim que o usuário pesquisa.
+   Reaproveita .grade e os cartões de game-card.css. */
+
+.destaques-iniciais {
+  margin-top: 4px;
+  animation: surgir .28s ease-out both;
+}
+
+.destaques-cabecalho {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.destaques-titulo {
+  margin: 0;
+  font-size: 17px; font-weight: 650; letter-spacing: -.01em;
+}
+.destaques-titulo::before {
+  content: "🔥";
+  margin-right: 7px;
+}
+.destaques-sub {
+  margin: 0;
+  font-size: 13px; color: var(--text-3);
+}

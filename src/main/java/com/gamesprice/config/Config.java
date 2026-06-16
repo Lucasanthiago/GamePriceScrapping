@@ -65,4 +65,7 @@ public final class Config {
 
     /** Porta padrao do servidor web embutido (modo --web). */
     public static final int PORTA_WEB = 8080;
+
+    /** Quantos jogos aparecem na secao "Maiores descontos do momento" da home. */
+    public static final int QTD_MAIORES_DESCONTOS = 12;
 }

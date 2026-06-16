@@ -28,6 +28,10 @@ public final class FonteGamesPlanet implements FonteLoja {
 
     private static final String BASE = "https://us.gamesplanet.com";
     private static final String URL_BUSCA = BASE + "/search?query=";
+
+    /** Mesma busca, filtrada para "game_special" e ordenada por maior desconto (cached_saving). */
+    private static final String URL_DESTAQUES = BASE + "/search?av=rel&s=cached_saving&t=game%2Bgame_special";
+
     private static final String MOEDA = "USD";
     private static final Map<String, String> SEM_COOKIES = Map.of();
 
@@ -46,9 +50,18 @@ public final class FonteGamesPlanet implements FonteLoja {
 
     @Override
     public List<Oferta> buscar(String termo) {
+        String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
+        return buscarUrl(url, "para \"" + termo + "\"");
+    }
+
+    @Override
+    public List<Oferta> buscarDestaques() {
+        return buscarUrl(URL_DESTAQUES, "em destaque");
+    }
+
+    private List<Oferta> buscarUrl(String url, String descricaoLog) {
         List<Oferta> ofertas = new ArrayList<>();
         try {
-            String url = URL_BUSCA + URLEncoder.encode(termo, StandardCharsets.UTF_8);
             Document doc = buscador.obter(url, SEM_COOKIES);
 
             for (Element item : doc.select("div.game_list_small")) {
@@ -57,9 +70,9 @@ public final class FonteGamesPlanet implements FonteLoja {
                     ofertas.add(oferta);
                 }
             }
-            Log.info("GamesPlanet: " + ofertas.size() + " ofertas para \"" + termo + "\"");
+            Log.info("GamesPlanet: " + ofertas.size() + " ofertas " + descricaoLog);
         } catch (Exception e) {
-            Log.erro("GamesPlanet falhou ao buscar \"" + termo + "\"", e);
+            Log.erro("GamesPlanet falhou ao buscar " + descricaoLog, e);
         }
         return ofertas;
     }
