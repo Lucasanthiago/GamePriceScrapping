@@ -71,6 +71,15 @@ e `Ctrl+F` no preço de um jogo — se o preço está no código-fonte, dá pra 
 | **GamersGate** | `gamersgate.com/games/?query=` | React pré-renderizado; `data-*` limpos | `div.catalog-item.product--item` → `data-name`, `data-price`, `data-currency`, `data-url`, `div.product--label-discount`, `div.catalog-item--full-price` |
 | **GamesPlanet** | `us.gamesplanet.com/search?query=` | SSR, em **USD** (domínio US) | `div.game_list_small` → `h4 a` (título/URL relativa), `span.price_current`, `span.price_base strike` (preço cheio), `span.price_saving` (desconto) |
 
+Cada loja expõe também uma URL de **promoções do momento** (mesmo HTML, mesmos seletores),
+usada pela seção "Maiores descontos" da home — ver [Maiores descontos do momento](#maiores-descontos-do-momento):
+
+| Loja | URL de destaques |
+|------|------------------|
+| **Steam** | `store.steampowered.com/search/?specials=1&sort_by=Discount_DESC` |
+| **GamersGate** | `gamersgate.com/games/?on_sale=1` |
+| **GamesPlanet** | `us.gamesplanet.com/search?av=rel&s=cached_saving&t=game+game_special` |
+
 **Descartadas (SPA, preço só via JS):** Nuuvem, Epic, GOG, Humble, Green Man Gaming, Fanatical,
 IndieGala. GameBillet bloqueia o GET com 403 (Cloudflare).
 
@@ -90,17 +99,19 @@ práticas e permitir cache e testes sem rede.
 
 ```
 App (CLI + Web / composition root)
- ├─ ComparadorPrecos
- │   ├─ List<FonteLoja>
- │   │   ├─ FonteSteam       ─┐
+ ├─ ComparadorPrecos        (busca por termo)
+ ├─ MaioresDescontos        (destaques da home, sem termo; raspa 1x na subida)
+ │   ├─ List<FonteLoja>      (compartilhada com o ComparadorPrecos)
+ │   │   ├─ FonteSteam       ─┐  buscar(termo) e buscarDestaques() reusam o mesmo parsing
  │   │   ├─ FonteGamersGate  ─┤── usam ──> Buscador (HTTP)
  │   │   └─ FonteGamesPlanet ─┤            ├─ JsoupBuscador (rede: userAgent, timeout, pausa)
  │   │                        │            └─ CacheBuscador (decorator: HTML em disco c/ TTL)
  │   │            GamersGate/GamesPlanet usam ──> ConversorMoeda
  │   │                                            ├─ CotacaoAoVivoConversor (USD/BRL ao vivo)
  │   │                                            └─ TaxaFixaConversor (fallback)
- │   ├─ NormalizadorTitulo  (chave de cruzamento exato)
- │   └─ SimilaridadeTitulo  (match aproximado: funde títulos quase iguais)
+ │   ├─ AgrupadorOfertas     (cruzamento por título normalizado, compartilhado)
+ │   ├─ NormalizadorTitulo   (chave de cruzamento exato)
+ │   └─ SimilaridadeTitulo   (match aproximado: funde títulos quase iguais)
  └─ apresentação dos Jogo[]:
      ├─ TabelaPrecos          ── terminal
      ├─ ExportadorComparacao  ── CSV / HTML autossuficiente
@@ -116,8 +127,8 @@ App (CLI + Web / composition root)
 | `normalizacao` | `NormalizadorTitulo` (forma canônica), `SimilaridadeTitulo` (Levenshtein), `RelevanciaTitulo` (precisão da busca) |
 | `http` | `Buscador` (interface), `JsoupBuscador` (rede), `CacheBuscador` (decorator de cache) |
 | `cambio` | `ConversorMoeda` (interface), `TaxaFixaConversor` (fallback), `CotacaoAoVivoConversor` (cotação ao vivo) |
-| `fonte` | `FonteLoja` (interface), `FonteSteam`, `FonteGamersGate`, `FonteGamesPlanet` |
-| `comparador` | `ComparadorPrecos` (roda fontes + cruza por título; opcionalmente match aproximado) |
+| `fonte` | `FonteLoja` (interface: `buscar(termo)` + `buscarDestaques()`), `FonteSteam`, `FonteGamersGate`, `FonteGamesPlanet` |
+| `comparador` | `ComparadorPrecos` (busca por termo + cruza por título; opcionalmente match aproximado), `MaioresDescontos` (destaques da home), `AgrupadorOfertas` (agrupamento por título normalizado, compartilhado) |
 | `ranking` | `ValeAPena` (score de custo-benefício: preço + nota das reviews) |
 | `cli` | `TabelaPrecos` (saída no terminal), `ExportadorComparacao` (CSV/HTML) |
 | `web` | `ServidorWeb` (HTTP embutido), `RespostaBusca` (mapeia domínio→JSON), `Json` (serializador) |
@@ -136,11 +147,11 @@ web/
 ├─ index.html              # marca os contêineres; carrega os CSS e o módulo /js/app.js
 ├─ css/                    # um arquivo por componente (ordem: base → … → responsive)
 │  ├─ base.css             # tokens de design (:root), reset, padrões globais
-│  ├─ layout.css  search.css  toolbar.css  highlight.css  game-card.css  states.css
+│  ├─ layout.css  search.css  toolbar.css  highlight.css  destaques-iniciais.css  game-card.css  states.css
 │  └─ responsive.css
 └─ js/
-   ├─ app.js               # controlador: dono do estado, liga eventos, orquestra
-   ├─ api.js               # único ponto que fala com /api (fetch)
+   ├─ app.js               # controlador: dono do estado, liga eventos, orquestra (carrega destaques na abertura)
+   ├─ api.js               # único ponto que fala com /api (fetch): buscar() e buscarDestaques()
    ├─ logic.js             # transformações puras (filtrar/ordenar/melhorVale), sem DOM
    ├─ dom.js               # helpers: h() (mini-hyperscript seguro), sanitizarUrl, fromHTML
    ├─ config.js  format.js # lojas (cor/sigla), ícones SVG, formatação
@@ -207,11 +218,31 @@ serve a página estática e uma pequena API JSON:
 |----------|-----------|
 | `GET /` (+ `/styles.css`, `/app.js`) | a UI glanceável (busca, cards por jogo, destaque "Vale a pena", loja mais barata em verde, badges de desconto/nota, câmbio ao vivo no topo) |
 | `GET /api/buscar?termo=...` | roda o comparador e devolve os jogos em JSON, já com o ranking e a cotação |
+| `GET /api/destaques` | os **maiores descontos do momento**, calculados **uma única vez na subida** do servidor (mesmo formato de jogo do `/api/buscar`, sem o campo `termo`) |
 | `GET /api/exportar?termo=...&formato=csv\|html` | baixa a comparação como arquivo |
 
 O front-end (vanilla JS) ainda filtra (só comparáveis) e ordena (mais barato / vale a pena /
 maior desconto) no cliente, sem novo request. O JSON é montado por `RespostaBusca` e serializado
 pelo `Json` (escritor mínimo, sem Jackson/Gson).
+
+## Maiores descontos do momento
+
+A home mostra, **antes de qualquer busca**, uma seção com os jogos em maior desconto agora nas
+lojas suportadas. O fluxo:
+
+- **Raspa uma única vez, na subida do servidor.** `App.iniciarWeb` dispara o scraping num
+  `CompletableFuture` em paralelo ao `start` do servidor; o resultado fica guardado nesse future
+  e **nunca é recalculado** (sem agendamento, sem repetição a cada request). A primeira chamada a
+  `/api/destaques` espera o future, as demais respondem na hora.
+- **Reusa todo o pipeline existente.** `MaioresDescontos` espelha o `ComparadorPrecos` mas sem
+  termo: chama `FonteLoja.buscarDestaques()` em cada loja, cruza pelo `AgrupadorOfertas` (mesma
+  lógica de título normalizado da busca), filtra `desconto > 0`, ordena por **maior desconto** e
+  corta em `Config.QTD_MAIORES_DESCONTOS`. Cada `Fonte*` extraiu o parsing para um helper privado,
+  então `buscar(termo)` e `buscarDestaques()` compartilham seletores — só muda a URL.
+- **Front-end reaproveita os componentes.** `app.js` chama `/api/destaques` ao abrir a página e
+  renderiza com o mesmo `gameCard` da busca (o JSON tem o formato idêntico). Ao iniciar uma busca
+  (submit ou chip de sugestão), a seção some e dá lugar ao fluxo de comparação de sempre. Se o
+  scraping falhar ou voltar vazio, a seção apenas não aparece (degrada em silêncio).
 
 ## Ranking "Vale a pena" e exportação
 
@@ -224,7 +255,7 @@ pelo `Json` (escritor mínimo, sem Jackson/Gson).
 
 ## Testes
 
-`mvn test` — 34 testes, sem rede (fontes e câmbio são dublados; HTML vem de fixtures):
+`mvn test` — 41 testes, sem rede (fontes e câmbio são dublados; HTML vem de fixtures):
 
 - `NormalizadorTituloTest` — variantes do mesmo jogo colapsam na mesma chave.
 - `PrecosTest` — parsing (centavos, padrão BR, ponto decimal) e formatação BRL.
@@ -250,21 +281,25 @@ pelo `Json` (escritor mínimo, sem Jackson/Gson).
 - [x] **Ranking "Vale a pena"** (menor preço + nota das reviews).
 - [x] **Exportação** da comparação para **CSV** e **HTML** (`ExportadorComparacao`).
 - [x] **UI web** glanceável + API JSON (`--web`), servidor HTTP embutido.
-- [x] Testes unitários (34, sem rede).
+- [x] **Maiores descontos do momento** na home (`MaioresDescontos` + `/api/destaques`), raspados 1x na subida.
+- [x] Testes unitários (41, sem rede).
 
 ### Próximos passos / extras possíveis
 - Quarta loja HTML validada pelo "teste dos 10 segundos" (nova `FonteLoja`).
 - Cache da cotação compartilhado em disco (hoje é em memória, por execução).
 - Histórico de preços (persistir buscas para mostrar variação ao longo do tempo).
 - Paginação/“ver mais resultados” na UI quando a busca retorna muitos jogos.
+- Novas seções na home além dos maiores descontos (ex.: lançamentos, mais bem avaliados).
 
 ---
 
 ## Notas para quem for evoluir (humano ou Claude Code)
 
-- **Adicionar loja:** criar `FonteXyz implements FonteLoja` no pacote `fonte`, registrar na
-  lista de fontes em `App.montar(...)` e adicionar o valor em `Loja`. Nada mais muda (a UI, o
-  ranking e a exportação trabalham sobre `Jogo[]`, então herdam a loja nova de graça).
+- **Adicionar loja:** criar `FonteXyz implements FonteLoja` no pacote `fonte` (implementando
+  `buscar(termo)` **e** `buscarDestaques()` — normalmente compartilhando o mesmo parsing, só
+  trocando a URL), registrar na lista de fontes em `App.montar(...)` e adicionar o valor em `Loja`.
+  Nada mais muda (a UI, o ranking, a exportação e os maiores descontos trabalham sobre `Jogo[]`,
+  então herdam a loja nova de graça).
 - **Seletores quebram quando o site muda de layout** — eles estão isolados dentro de cada
   `Fonte*`. A tabela "Lojas suportadas" acima lista os seletores atuais; atualize-a junto.
 - **Preço é sempre BigDecimal em BRL** dentro do domínio. Conversão e parsing ficam em
