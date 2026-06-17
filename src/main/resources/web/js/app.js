@@ -4,7 +4,7 @@
 // api (dados) -> logic (transformações puras) -> components (visual).
 
 import { $, h } from "./dom.js";
-import { buscar, urlsExportacao } from "./api.js";
+import { buscar, buscarDestaques, urlsExportacao } from "./api.js";
 import { filtrarJogos, ordenarJogos, melhorVale } from "./logic.js";
 import { gameCard } from "./components/gameCard.js";
 import { highlightCard } from "./components/highlightCard.js";
@@ -18,6 +18,8 @@ const els = {
   painel: $("#painel"),
   estado: $("#estado"),
   grade: $("#grade"),
+  destaquesIniciais: $("#destaquesIniciais"),
+  gradeDestaques: $("#gradeDestaques"),
   destaque: $("#destaque"),
   resumo: $("#resumoTexto"),
   soComparaveis: $("#soComparaveis"),
@@ -51,6 +53,7 @@ async function iniciarBusca(termo) {
   if (!termo) return;
   mostrarEstado(loadingState(termo));
   els.painel.hidden = true;
+  els.destaquesIniciais.hidden = true; // a busca substitui os destaques da home
   els.btn.disabled = true;
   try {
     ultimaResposta = await buscar(termo);
@@ -140,3 +143,24 @@ function aplicarExportacao(termo) {
   els.exportCsv.href = csv;
   els.exportHtml.href = html;
 }
+
+// ------------------------------------------------ destaques iniciais (home)
+// Carrega uma vez, ao abrir a página, os maiores descontos do momento. Some quando
+// o usuário inicia uma busca; degrada em silêncio se não vier nada.
+async function carregarDestaques() {
+  try {
+    const resp = await buscarDestaques();
+    if (!resp.jogos || resp.jogos.length === 0) return;
+    renderCambio(els.cambio, els.cambioValor, resp.cotacaoUsdBrl);
+    els.gradeDestaques.replaceChildren(...resp.jogos.map((jogo, i) => {
+      const card = gameCard(jogo);
+      card.style.animationDelay = Math.min(i * 35, 350) + "ms";
+      return card;
+    }));
+    if (els.painel.hidden) els.destaquesIniciais.hidden = false; // não reabre após uma busca
+  } catch (err) {
+    // falha de rede/scraping não deve poluir a home: apenas não mostra a seção
+  }
+}
+
+carregarDestaques();

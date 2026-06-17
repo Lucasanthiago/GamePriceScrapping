@@ -25,6 +25,11 @@ class ComparadorPrecosTest {
             public List<Oferta> buscar(String termo) {
                 return List.of(ofertas);
             }
+
+            @Override
+            public List<Oferta> buscarDestaques() {
+                return List.of(ofertas);
+            }
         };
     }
 
