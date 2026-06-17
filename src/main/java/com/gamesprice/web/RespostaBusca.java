@@ -42,6 +42,28 @@ public final class RespostaBusca {
         return raiz;
     }
 
+    /**
+     * Monta a resposta dos "maiores descontos do momento" (sem termo de busca). Reaproveita
+     * o mesmo {@link #jogoJson} da busca, de modo que o front-end use os mesmos componentes.
+     */
+    public static Map<String, Object> montarDestaques(List<Jogo> jogos, Optional<BigDecimal> cotacaoUsdBrl) {
+        Map<Jogo, ValeAPena.Pontuacao> ranking = new LinkedHashMap<>();
+        for (ValeAPena.Pontuacao p : ValeAPena.ranquear(jogos)) {
+            ranking.put(p.jogo(), p);
+        }
+
+        List<Object> lista = new ArrayList<>();
+        for (Jogo jogo : jogos) {
+            lista.add(jogoJson(jogo, ranking.get(jogo)));
+        }
+
+        Map<String, Object> raiz = new LinkedHashMap<>();
+        raiz.put("total", jogos.size());
+        raiz.put("cotacaoUsdBrl", cotacaoUsdBrl.map(BigDecimal::toPlainString).orElse(null));
+        raiz.put("jogos", lista);
+        return raiz;
+    }
+
     private static Map<String, Object> jogoJson(Jogo jogo, ValeAPena.Pontuacao pontuacao) {
         Oferta maisBarata = jogo.ofertaMaisBarata();
 

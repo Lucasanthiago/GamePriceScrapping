@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 /**
@@ -29,18 +30,26 @@ import java.util.function.Supplier;
  * <ul>
  *   <li>{@code GET /} e estaticos ({@code /styles.css}, {@code /app.js}) — a UI.</li>
  *   <li>{@code GET /api/buscar?termo=...} — JSON com os jogos comparados.</li>
+ *   <li>{@code GET /api/destaques} — JSON com os maiores descontos do momento (calculado
+ *       uma unica vez na subida do servidor, ver {@code App.iniciarWeb}).</li>
  *   <li>{@code GET /api/exportar?termo=...&formato=csv|html} — download da comparacao.</li>
  * </ul>
  */
 public final class ServidorWeb {
 
     private final ComparadorPrecos comparador;
+    private final Future<List<Jogo>> destaques;
     private final Supplier<Optional<BigDecimal>> cotacaoUsdBrl;
     private final int porta;
     private HttpServer servidor;
 
-    public ServidorWeb(ComparadorPrecos comparador, Supplier<Optional<BigDecimal>> cotacaoUsdBrl, int porta) {
+    public ServidorWeb(
+            ComparadorPrecos comparador,
+            Future<List<Jogo>> destaques,
+            Supplier<Optional<BigDecimal>> cotacaoUsdBrl,
+            int porta) {
         this.comparador = comparador;
+        this.destaques = destaques;
         this.cotacaoUsdBrl = cotacaoUsdBrl;
         this.porta = porta;
     }
@@ -67,6 +76,8 @@ public final class ServidorWeb {
             String caminho = troca.getRequestURI().getPath();
             if (caminho.equals("/api/buscar")) {
                 apiBuscar(troca);
+            } else if (caminho.equals("/api/destaques")) {
+                apiDestaques(troca);
             } else if (caminho.equals("/api/exportar")) {
                 apiExportar(troca);
             } else {
@@ -89,6 +100,19 @@ public final class ServidorWeb {
         }
         List<Jogo> jogos = comparador.comparar(termo.trim());
         Map<String, Object> corpo = RespostaBusca.montar(termo.trim(), jogos, cotacaoUsdBrl.get());
+        responder(troca, 200, "application/json; charset=utf-8",
+                Json.escrever(corpo).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void apiDestaques(HttpExchange troca) throws IOException {
+        List<Jogo> jogos;
+        try {
+            jogos = destaques.get();
+        } catch (Exception e) {
+            Log.erro("falha ao obter maiores descontos", e);
+            jogos = List.of();
+        }
+        Map<String, Object> corpo = RespostaBusca.montarDestaques(jogos, cotacaoUsdBrl.get());
         responder(troca, 200, "application/json; charset=utf-8",
                 Json.escrever(corpo).getBytes(StandardCharsets.UTF_8));
     }

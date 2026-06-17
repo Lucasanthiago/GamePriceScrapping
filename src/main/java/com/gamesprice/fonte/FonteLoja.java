@@ -25,4 +25,12 @@ public interface FonteLoja {
      * @return ofertas encontradas; nunca null
      */
     List<Oferta> buscar(String termo);
+
+    /**
+     * Busca os itens em destaque/promocao da loja agora, sem termo de busca (ex.: pagina
+     * de "specials" da Steam). Mesma garantia de resiliencia de {@link #buscar(String)}.
+     *
+     * @return ofertas em destaque; nunca null
+     */
+    List<Oferta> buscarDestaques();
 }

@@ -4,11 +4,11 @@ import com.gamesprice.fonte.FonteLoja;
 import com.gamesprice.model.Jogo;
 import com.gamesprice.model.Oferta;
 import com.gamesprice.normalizacao.NormalizadorTitulo;
+import com.gamesprice.normalizacao.RelevanciaTitulo;
 import com.gamesprice.normalizacao.SimilaridadeTitulo;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -49,11 +49,33 @@ public final class ComparadorPrecos {
      */
     public List<Jogo> comparar(String termo) {
         List<Oferta> todas = coletarOfertas(termo);
-        Map<String, Jogo> porTitulo = agruparPorTituloNormalizado(todas);
+        Map<String, Jogo> porTitulo = AgrupadorOfertas.agrupar(todas);
         Collection<Jogo> jogos = limiarSimilaridade > 0
                 ? fundirAproximados(porTitulo)
                 : porTitulo.values();
-        return ordenar(jogos);
+        return ordenar(filtrarRelevantes(termo, jogos));
+    }
+
+    /**
+     * Mantem apenas os jogos relevantes ao termo (as lojas trazem muita coisa tangencial).
+     *
+     * <p>Rede de seguranca: se o filtro zerar tudo, devolve a lista original — para buscas
+     * por sigla/abreviacao ("gta") e melhor mostrar um resultado amplo do que uma tela vazia.
+     */
+    private Collection<Jogo> filtrarRelevantes(String termo, Collection<Jogo> jogos) {
+        List<String> termos = RelevanciaTitulo.termosSignificativos(termo);
+        if (termos.isEmpty()) {
+            return jogos;
+        }
+        List<Jogo> relevantes = new ArrayList<>();
+        for (Jogo jogo : jogos) {
+            boolean casaTermo = RelevanciaTitulo.relevante(jogo.tituloNormalizado(), termos);
+            boolean extra = RelevanciaTitulo.pareceConteudoExtra(jogo.tituloNormalizado());
+            if (casaTermo && !extra) {
+                relevantes.add(jogo);
+            }
+        }
+        return relevantes.isEmpty() ? jogos : relevantes;
     }
 
     private List<Oferta> coletarOfertas(String termo) {
@@ -62,20 +84,6 @@ public final class ComparadorPrecos {
             todas.addAll(fonte.buscar(termo));
         }
         return todas;
-    }
-
-    private Map<String, Jogo> agruparPorTituloNormalizado(List<Oferta> ofertas) {
-        // LinkedHashMap preserva a ordem de descoberta antes da ordenacao final.
-        Map<String, Jogo> mapa = new LinkedHashMap<>();
-        for (Oferta oferta : ofertas) {
-            String chave = NormalizadorTitulo.normalizar(oferta.tituloOriginal());
-            if (chave.isEmpty()) {
-                continue;
-            }
-            Jogo jogo = mapa.computeIfAbsent(chave, k -> new Jogo(k, oferta.tituloOriginal()));
-            jogo.adicionarOferta(oferta);
-        }
-        return mapa;
     }
 
     /**

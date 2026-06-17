@@ -6,6 +6,7 @@ import com.gamesprice.cambio.TaxaFixaConversor;
 import com.gamesprice.cli.ExportadorComparacao;
 import com.gamesprice.cli.TabelaPrecos;
 import com.gamesprice.comparador.ComparadorPrecos;
+import com.gamesprice.comparador.MaioresDescontos;
 import com.gamesprice.config.Config;
 import com.gamesprice.fonte.FonteGamersGate;
 import com.gamesprice.fonte.FonteGamesPlanet;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
@@ -101,7 +103,11 @@ public final class App {
     }
 
     /** Resultado da injecao de dependencia: o comparador e como obter a cotacao para a UI. */
-    private record Montagem(ComparadorPrecos comparador, Supplier<Optional<BigDecimal>> cotacaoUsdBrl, int porta) {
+    private record Montagem(
+            ComparadorPrecos comparador,
+            MaioresDescontos maioresDescontos,
+            Supplier<Optional<BigDecimal>> cotacaoUsdBrl,
+            int porta) {
     }
 
     /** Monta o grafo de objetos (injecao de dependencia manual). */
@@ -127,11 +133,19 @@ public final class App {
 
         double limiar = exato ? 0.0 : Config.LIMIAR_SIMILARIDADE;
         ComparadorPrecos comparador = new ComparadorPrecos(fontes, limiar);
-        return new Montagem(comparador, cotacao, porta);
+        MaioresDescontos maioresDescontos = new MaioresDescontos(fontes, Config.QTD_MAIORES_DESCONTOS);
+        return new Montagem(comparador, maioresDescontos, cotacao, porta);
     }
 
     private static void iniciarWeb(Montagem m) throws IOException {
-        ServidorWeb servidor = new ServidorWeb(m.comparador(), m.cotacaoUsdBrl(), m.porta());
+        // Roda uma unica vez, em paralelo a subida do servidor: o resultado fica
+        // guardado neste future e nunca e recalculado (sem agendamento/repeticao).
+        CompletableFuture<List<Jogo>> destaques = CompletableFuture.supplyAsync(() -> {
+            Log.info("Buscando maiores descontos do momento...");
+            return m.maioresDescontos().destaques();
+        });
+
+        ServidorWeb servidor = new ServidorWeb(m.comparador(), destaques, m.cotacaoUsdBrl(), m.porta());
         servidor.iniciar();
         System.out.println("Comparador de Precos de Jogos - UI web em " + servidor.url());
         System.out.println("(Ctrl+C para encerrar)");

@@ -1,0 +1,23 @@
+/* highlight — cartão de destaque “Vale a pena” (melhor custo-benefício da busca). */
+
+.destaque {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.selo {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent-strong);
+}
+.d-jogo { flex: 1 1 240px; min-width: 0; }
+.d-titulo { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+.d-meta { margin: 3px 0 0; font-size: 13px; color: var(--text-2); }
+.d-meta b { color: var(--text); font-weight: 600; }
+.d-preco { text-align: right; margin-left: auto; }
+.d-preco .pv { display: block; font-size: 22px; font-weight: 700; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+.d-preco .pl { font-size: 11.5px; color: var(--text-3); }

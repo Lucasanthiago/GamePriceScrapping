@@ -25,6 +25,11 @@ class MatchAproximadoTest {
             public List<Oferta> buscar(String termo) {
                 return List.of(oferta);
             }
+
+            @Override
+            public List<Oferta> buscarDestaques() {
+                return List.of(oferta);
+            }
         };
     }
 

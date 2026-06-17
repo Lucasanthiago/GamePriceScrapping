@@ -1,0 +1,18 @@
+/* responsive — ajustes por largura e respeito a prefers-reduced-motion.
+   Carregado por último para sobrepor os componentes. */
+
+@media (max-width: 560px) {
+  .topo { flex-wrap: wrap; padding-top: 22px; }
+  .cambio { align-items: flex-start; flex-direction: row; gap: 8px; align-self: stretch; justify-content: space-between; }
+  .resumo { align-items: flex-start; }
+  .oferta { flex-wrap: wrap; gap: 10px 12px; }
+  .loja { flex-basis: 100%; }
+  .preco-col { text-align: left; min-width: 0; }
+  .acoes { margin-left: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+  .spinner { animation-duration: 1.4s; }
+  * { scroll-behavior: auto; }
+}
