@@ -98,6 +98,9 @@
     <span class="rodape-dica">A faixa <strong class="amostra-menor">verde</strong> marca a loja mais barata quando há comparação.</span>
   </footer>
 
+  <!-- Vazio quando front e back sao servidos juntos (modo --web). Em deploy com front
+       separado (ex.: Vercel), preencher com a URL do backend (ex.: https://meu-backend.onrender.com). -->
+  <script>window.__API_BASE__ = "";</script>
   <script type="module" src="/js/app.js"></script>
 </body>
 </html>

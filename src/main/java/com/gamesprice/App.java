@@ -57,7 +57,7 @@ public final class App {
         boolean cambioFixo = false;
         boolean exportarCsv = false;
         boolean exportarHtml = false;
-        int porta = Config.PORTA_WEB;
+        int porta = portaPadrao();
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -212,5 +212,11 @@ public final class App {
         } catch (NumberFormatException e) {
             return padrao;
         }
+    }
+
+    /** Hosts como Render/Railway atribuem a porta via env var PORT; --port ainda tem prioridade. */
+    private static int portaPadrao() {
+        String env = System.getenv("PORT");
+        return env == null ? Config.PORTA_WEB : parsePorta(env, Config.PORTA_WEB);
     }
 }

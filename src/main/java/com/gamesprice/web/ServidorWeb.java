@@ -185,6 +185,8 @@ public final class ServidorWeb {
 
     private void responder(HttpExchange troca, int status, String tipo, byte[] corpo) throws IOException {
         troca.getResponseHeaders().set("Content-Type", tipo);
+        // API publica e somente leitura: libera para qualquer origem (front pode rodar em outro dominio).
+        troca.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         troca.sendResponseHeaders(status, corpo.length);
         try (OutputStream os = troca.getResponseBody()) {
             os.write(corpo);

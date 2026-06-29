@@ -2,6 +2,9 @@
 
 // config — constantes de apresentação (identidade das lojas e ícones SVG).
 
+/** URL do backend (sem barra final). Vazia = mesma origem (definido em index.html). */
+export const API_BASE = window.__API_BASE__ || "";
+
 /** Cor + sigla do badge de cada loja. Loja nova: basta um item aqui. */
 export const LOJAS = {
   "Steam":       { sigla: "S",  cor: "#1b9be0" },
